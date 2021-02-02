@@ -20,8 +20,8 @@ type HomePage struct {
 	ErrorMessage     bool
 }
 
-const byteSizeLinksURL = "https://bsl.link"
-const apiURL = "https://z6wwpjwwqi.execute-api.us-east-1.amazonaws.com/dev"
+const byteSizeLinksURL = "https://bytesize.link"
+const apiURL = "https://api.bytesize.link"
 
 func generateLink(sourceLink string) (string, error) {
 	// TODO: validate source link
