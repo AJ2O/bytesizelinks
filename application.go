@@ -23,7 +23,7 @@ type HomePage struct {
 const byteSizeLinksURL = "https://bytesize.link"
 const apiURL = "https://api.bytesize.link"
 
-func generateLink(sourceLink string) (string, error) {
+func generateLink(sourceLink string, requestLink string) (string, error) {
 	// TODO: validate source link
 	// 1. Empty?
 	// 2. Valid Link?
@@ -61,7 +61,7 @@ func main() {
 
 	// home
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("home.html")
+		tmpl, err := template.ParseFiles("templates/home.html")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -77,9 +77,9 @@ func main() {
 		// post-request -> generate URL
 		if r.Method == http.MethodPost {
 			sourceLink := r.FormValue("sourceLink")
-			//requestLink := r.FormValue("requestLink")
+			requestLink := r.FormValue("requestLink")
 
-			link, err := generateLink(sourceLink)
+			link, err := generateLink(sourceLink, requestLink)
 			if err != nil {
 				data.ErrorMessage = true
 			} else {

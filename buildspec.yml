@@ -1,0 +1,25 @@
+version: 0.2
+
+phases:
+  # set go version
+  install:
+    runtime-versions:
+      golang: 1.15
+
+  # download required packages
+  pre_build:
+    commands:
+      - echo Downloading go packages...
+      - go get -d -v ./...
+  
+  # build app, and output to file "bytesizelinks"
+  build:
+    commands:
+      - echo Building app...
+      - go build -o bytesizelinks
+
+# build artifacts
+artifacts:
+  files:
+    - bytesizelinks
+  name: build-$(date +%Y-%m-%d)
