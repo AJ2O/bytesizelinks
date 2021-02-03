@@ -22,4 +22,6 @@ phases:
 artifacts:
   files:
     - bytesizelinks
+    - Service/**/*
+    - Scripts/**/*
   name: build-$(date +%Y-%m-%d)
