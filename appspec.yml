@@ -1,0 +1,17 @@
+version: 0.0
+os: linux
+files:
+  - source: Service/bytesizelinks.service
+    destination: /lib/systemd/system/bytesizelinks.service
+  - source: /bytesizelinks
+    destination: /webapps/bytesizelinks
+hooks:
+  ApplicationStop:
+    - location: Scripts/stop_app.sh
+      timeout: 20
+  ApplicationStart:
+    - location: Scripts/start_app.sh
+      timeout: 20
+  ValidateService:
+    - location: Scripts/validate_app.sh
+      timeout: 20
