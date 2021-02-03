@@ -5,7 +5,7 @@ Description=bytesizelinks
 Type=simple
 Restart=always
 RestartSec=5s
-ExecStart=/webapps/bytesizelinks
+ExecStart=/webapps/bytesizelinks/app
 
 [Install]
 WantedBy=multi-user.target

@@ -2,8 +2,10 @@ version: 0.0
 os: linux
 files:
   - source: Service/bytesizelinks.service
-    destination: /lib/systemd/system/bytesizelinks.service
-  - source: /bytesizelinks
+    destination: /lib/systemd/system
+  - source: /app
+    destination: /webapps/bytesizelinks
+  - source: /templates
     destination: /webapps/bytesizelinks
 hooks:
   ApplicationStop:
