@@ -5,6 +5,7 @@ Description=bytesizelinks
 Type=simple
 Restart=always
 RestartSec=5s
+WorkingDirectory=/webapps/bytesizelinks
 ExecStart=/webapps/bytesizelinks/app
 
 [Install]

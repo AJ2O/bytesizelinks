@@ -6,7 +6,7 @@ files:
   - source: /app
     destination: /webapps/bytesizelinks
   - source: /templates
-    destination: /webapps/bytesizelinks
+    destination: /webapps/bytesizelinks/templates
 hooks:
   ApplicationStop:
     - location: Scripts/stop_app.sh

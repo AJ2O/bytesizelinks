@@ -59,7 +59,7 @@ func main() {
 	// router creation
 	r := mux.NewRouter()
 
-	// home
+	// GET: home page
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("templates/home.html")
 		if err != nil {
@@ -74,24 +74,39 @@ func main() {
 			GeneratedMessage: false,
 		}
 
-		// post-request -> generate URL
-		if r.Method == http.MethodPost {
-			sourceLink := r.FormValue("sourceLink")
-			requestLink := r.FormValue("requestLink")
+		tmpl.Execute(w, data)
+	}).Methods("GET")
 
-			link, err := generateLink(sourceLink, requestLink)
-			if err != nil {
-				data.ErrorMessage = true
-			} else {
-				data.GeneratedMessage = true
-				data.Message = link
-			}
+	// POST: process url request
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.ParseFiles("templates/home.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		data := HomePage{
+			WebsiteURL:       byteSizeLinksURL,
+			GeneratedURL:     "",
+			Message:          "",
+			ErrorMessage:     false,
+			GeneratedMessage: false,
+		}
+		sourceLink := r.FormValue("sourceLink")
+		requestLink := r.FormValue("requestLink")
+
+		link, err := generateLink(sourceLink, requestLink)
+		if err != nil {
+			data.ErrorMessage = true
+		} else {
+			data.GeneratedMessage = true
+			data.Message = link
+			log.Println(r.Method, sourceLink, link)
 		}
 
 		tmpl.Execute(w, data)
-	})
+	}).Methods("POST")
 
-	// re-routing to other pages
+	// GET: re-routing to other pages
 	r.HandleFunc("/{byteLink}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		byteLink := vars["byteLink"]
@@ -101,10 +116,10 @@ func main() {
 			//
 		} else {
 			// re-route to website
-			log.Println(link)
+			log.Println(r.Method, byteLink, link)
 			http.Redirect(w, r, link, http.StatusSeeOther)
 		}
-	})
+	}).Methods("GET")
 
 	http.ListenAndServe(":80", r)
 }
