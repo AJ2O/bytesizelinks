@@ -22,6 +22,7 @@ phases:
 artifacts:
   files:
     - bytesizelinks
+    - appspec.yml
     - Service/**/*
     - Scripts/**/*
   name: build-$(date +%Y-%m-%d)
