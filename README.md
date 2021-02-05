@@ -12,5 +12,17 @@ Website: https://bytesize.link
 <img src="Diagrams/Architecture.png" alt="Architecture"/>
 
 ## Notes
-- Deployment of the app to the web servers is handled with AWS CodePipeline*, CodeBuild*, and CodeDeploy* directly from this repository using [continuous delivery](https://aws.amazon.com/devops/continuous-delivery/)
-  - \* - Not included in Architecture Diagram
+- The web servers auto-scale to handle fluctuating traffic
+- The servers are behind a load balancer to evenly distribute web traffic, preventing any one from becoming overwhelmed
+
+# Code Release Diagram
+<img src="Diagrams/CodeRelease.png" alt="Architecture"/>
+
+## Notes
+- CodePipeline is automatically triggered whenever it detects a change in this GitHub repository
+- CodeBuild saves the build artifacts in storage, which is then used by CodeDeploy to update the web servers
+- CodeDeploy uses a [Blue/Green Deployment](https://martinfowler.com/bliki/BlueGreenDeployment.html), using two live environments: 
+  - **Blue:** Uses the existing code
+  - **Green:** Uses the new code
+  - After validating that the green environment works properly, I can choose to remove the blue environment
+  - If the green environment has issues, I can quickly switch back to the blue environment
