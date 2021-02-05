@@ -5,8 +5,10 @@ files:
     destination: /lib/systemd/system
   - source: /app
     destination: /webapps/bytesizelinks
-  - source: /templates
-    destination: /webapps/bytesizelinks/templates
+  - source: /html
+    destination: /webapps/bytesizelinks/html
+  - source: /static
+    destination: /webapps/bytesizelinks/static
 hooks:
   ApplicationStop:
     - location: Scripts/stop_app.sh

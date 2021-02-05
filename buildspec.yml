@@ -23,7 +23,8 @@ artifacts:
   files:
     - app
     - appspec.yml
-    - templates/**/*
+    - html/**/*
+    - static/**/*
     - Service/**/*
     - Scripts/**/*
   name: build-$(date +%Y-%m-%d)

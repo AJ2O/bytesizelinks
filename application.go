@@ -59,9 +59,13 @@ func main() {
 	// router creation
 	r := mux.NewRouter()
 
+	// serve static resources (ex. CSS)
+	fs := http.FileServer(http.Dir("static"))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+
 	// GET: home page
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("templates/home.html")
+		tmpl, err := template.ParseFiles("html/home.html")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -79,7 +83,7 @@ func main() {
 
 	// POST: process url request
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("templates/home.html")
+		tmpl, err := template.ParseFiles("html/home.html")
 		if err != nil {
 			log.Fatal(err)
 		}

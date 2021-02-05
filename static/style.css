@@ -1,0 +1,32 @@
+.center {
+    text-align: center;
+}
+
+.error {
+    color: red;
+}
+
+.form {
+    margin: auto;
+}
+
+.formHeader {
+    text-align: right;
+}
+
+.generate {
+    text-align: right;
+}
+
+.title {
+    border-bottom-style: solid;
+    border-color: rgba(red, green, blue, alpha);
+    margin: 1em 0em;
+    padding-bottom: 8px;
+    text-align: center;
+}
+
+.webpage {
+    background-color: #0C171F;
+    color: ivory;
+}
