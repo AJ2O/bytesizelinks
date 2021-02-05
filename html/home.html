@@ -4,16 +4,17 @@
     </head>
     <script>
         function setButtonText() {
+            var buttonElement = document.getElementById("button");
             var buttonText = document.getElementById("requestLink").value;
             if (!buttonText || 0 === buttonText.length) {
-                document.getElementById("button").value = "Generate!";
+                buttonElement.value = "Generate!";
             }
             else {
-                document.getElementById("button").value = "Use Custom Link!";
+                buttonElement.value = "Use Custom Link!";
             }
         }
     </script>
-    <body class="webpage" onkeypress="setButtonText()">
+    <body class="webpage">
         <h1 class="title">Byte-Size.Links</h1>
         {{if .ErrorMessage}}
             <h2 class="center error">{{.Message}}</h2>
@@ -31,7 +32,7 @@
                 </tr>
                 <tr>
                     <td class="formHeader"><label>Custom Link: {{.WebsiteURL}}/</label></td>
-                    <td><input type="text" id="requestLink" name="requestLink" placeholder="bytelink"><br/></td>
+                    <td><input oninput="setButtonText()" type="text" id="requestLink" name="requestLink" placeholder="bytelink"><br/></td>
                 </tr>
                 <tr>
                     <td></td>
