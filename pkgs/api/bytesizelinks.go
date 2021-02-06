@@ -21,11 +21,14 @@ func GenerateByteLink(sourceURL string, customLink string) (string, error) {
 		return "", err
 	}
 
-	// validate custom link
-	err = inputvalidation.ValidateCustomLink(customLink)
-	if err != nil {
-		return "", err
+	// validate custom link if specified
+	if customLink != "" {
+		err = inputvalidation.ValidateCustomLink(customLink)
+		if err != nil {
+			return "", err
+		}
 	}
+
 	// Invoke API
 	queryParams := "?sourceLink=" + sourceURL + "&customByteLink=" + customLink
 	response, err := http.Post(
