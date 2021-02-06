@@ -3,17 +3,24 @@ package inputvalidation
 
 import (
 	"errors"
+	"net/url"
 	"regexp"
+	"strings"
 )
 
 // ValidateSourceLink checks if the given source link is of proper format.
 func ValidateSourceLink(sourceLink string) error {
 	// source link must not be empty
+	sourceLink = strings.TrimSpace(sourceLink)
 	if len(sourceLink) == 0 {
 		return errors.New("Please enter a link!")
 	}
 
 	// source link must look like a valid URL
+	u, err := url.ParseRequestURI(sourceLink)
+	if err != nil || u.Scheme == "" || u.Host == "" || !strings.Contains(u.Host, ".") {
+		return errors.New("Please enter a valid URL!")
+	}
 
 	return nil
 }
