@@ -27,6 +27,12 @@ func ValidateSourceLink(sourceLink string) error {
 
 // ValidateCustomLink checks if the given custom link is of proper format.
 func ValidateCustomLink(customLink string) error {
+	// custom link cannot be empty
+	customLink = strings.TrimSpace(customLink)
+	if len(customLink) == 0 {
+		return errors.New("The custom link must not be empty!")
+	}
+
 	// custom link must be alphanumeric
 	if !regexp.MustCompile(`^[a-zA-Z0-9]*$`).MatchString(customLink) {
 		return errors.New("The custom link may only contain numbers or letters!")

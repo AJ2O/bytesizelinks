@@ -12,6 +12,9 @@ func TestValidateSourceLink(t *testing.T) {
 		{"", "Please enter a link!"},
 		{"   ", "Please enter a link!"},
 
+		// nonsense
+		{"amioasd#2", "Please enter a valid URL!"},
+
 		// relative paths
 		{"/", "Please enter a valid URL!"},
 		{"/foo/bar", "Please enter a valid URL!"},
@@ -22,13 +25,18 @@ func TestValidateSourceLink(t *testing.T) {
 
 		// transport protocol
 		{"http", "Please enter a valid URL!"},
+		{"http:", "Please enter a valid URL!"},
 		{"http://", "Please enter a valid URL!"},
 
 		// domain resolution
 		{"http://www", "Please enter a valid URL!"},
 		{"google.com", "Please enter a valid URL!"},
 		{"http://google.com", ""},
-		{"http://google.com:443", ""},
+		{"https://google.com", ""},
+		{"https://google.com:443", ""},
+
+		// invalid mixture
+		{"http://google.co m", "Please enter a valid URL!"},
 	}
 	for _, c := range cases {
 		got := ValidateSourceLink(c.in)
@@ -36,27 +44,51 @@ func TestValidateSourceLink(t *testing.T) {
 			if c.errorMessage != "" {
 				t.Errorf("ValidateSourceLink(%q) == nil, want Error(%q)", c.in, c.errorMessage)
 			}
-		} else {
-			if got.Error() != c.errorMessage {
-				t.Errorf("ValidateSourceLink(%q) == %q, want Error(%q)", c.in, got.Error(), c.errorMessage)
-			}
+		} else if got.Error() != c.errorMessage {
+			t.Errorf("ValidateSourceLink(%q) == %q, want Error(%q)", c.in, got.Error(), c.errorMessage)
 		}
 	}
 }
 
 func TestValidateCustomLink(t *testing.T) {
 	cases := []struct {
-		in, want string
+		in, errorMessage string
 	}{
-		{"", "Please enter a link!"},
+		// blank input
+		{"", "The custom link must not be empty!"},
+		{"   ", "The custom link must not be empty!"},
+
+		// invalid characters
+		{"@", "The custom link may only contain numbers or letters!"},
+		{"()", "The custom link may only contain numbers or letters!"},
+		{"*", "The custom link may only contain numbers or letters!"},
+
+		// lowercase
+		{"a", ""},
+		{"abcdefgh", ""},
+
+		// uppercase
+		{"Z", ""},
+		{"ZYXWVUTS", ""},
+
+		// numbers
+		{"0", ""},
+		{"98765432", ""},
+
+		// mixture
+		{"Ab34Ef78", ""},
+
+		// invalid mixture
+		{"ab2ds$a8", "The custom link may only contain numbers or letters!"},
 	}
 	for _, c := range cases {
-		got := ValidateSourceLink(c.in)
+		got := ValidateCustomLink(c.in)
 		if got == nil {
-			t.Errorf("ValidateSourceLink(%q) == nil, want Error(%q)", c.in, c.want)
-		}
-		if got.Error() != c.want {
-			t.Errorf("ValidateSourceLink(%q) == %q, want Error(%q)", c.in, got.Error(), c.want)
+			if c.errorMessage != "" {
+				t.Errorf("ValidateCustomLink(%q) == nil, want Error(%q)", c.in, c.errorMessage)
+			}
+		} else if got.Error() != c.errorMessage {
+			t.Errorf("ValidateCustomLink(%q) == %q, want Error(%q)", c.in, got.Error(), c.errorMessage)
 		}
 	}
 }
