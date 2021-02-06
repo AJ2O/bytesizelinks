@@ -12,9 +12,12 @@ func main() {
 	// router creation
 	r := mux.NewRouter()
 
-	// serve static resources (ex. CSS)
+	// serve static resources (ex. CSS, images)
 	fs := http.FileServer(http.Dir("static"))
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+
+	// favicon
+	r.HandleFunc("/favicon.ico", httphandler.FaviconHandler).Methods("GET")
 
 	// home page
 	r.HandleFunc("/", httphandler.HomePageHandler).Methods("GET")

@@ -103,3 +103,9 @@ func RedirectByteLinkHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, link, http.StatusSeeOther)
 	}
 }
+
+// FaviconHandler serves the favicon.ico image for browsers.
+// e.g. r.HandleFunc("/favicon.ico", FaviconHandler).Methods("GET")
+func FaviconHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "static/images/favicon_io/favicon.ico")
+}
