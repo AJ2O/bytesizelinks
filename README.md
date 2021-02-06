@@ -2,9 +2,9 @@
 
 ## Overview
 Converts any URL to a short "byte-link", which can easily be used and shared. Below are some examples:
-- https://bytesize.link/3sytdp8w - AWS Elastic Load Balancing Landing Page
-- https://bytesize.link/alzob8a9 - Alexa Automotive Skills Best Practices
-- https://bytesize.link/boamivrv - Medium Article on PyTorch powering Lyft's Self-Driving Cars
+- https://bytesize.link/cron - Online Cron Formatter
+- https://bytesize.link/devops - DevOps Periodic Table
+- https://bytesize.link/pytorch - Medium Article on Lyft & PyTorch
 
 Website: https://bytesize.link
 
@@ -19,8 +19,10 @@ Website: https://bytesize.link
 <img src="Diagrams/CodeRelease.png" alt="Architecture"/>
 
 ## Notes
-- CodePipeline is automatically triggered whenever it detects a change in this GitHub repository
-- CodeBuild saves the build artifacts in storage, which is then used by CodeDeploy to update the web servers
+- [CodePipeline](https://aws.amazon.com/codepipeline/) is automatically triggered whenever it detects a change in this GitHub repository:
+- 1. The code is compiled with [CodeBuild](https://aws.amazon.com/codebuild/), and unit tests are executed against it.
+- 2. Once the code is built, and the unit tests pass, the build artifacts are stored in an [S3 bucket](https://aws.amazon.com/s3/).
+- 3. [CodeDeploy](https://aws.amazon.com/codedeploy/) uses the stored artifacts and deploys the updated app into the web servers
 - CodeDeploy uses a [Blue/Green Deployment](https://martinfowler.com/bliki/BlueGreenDeployment.html), using two live environments: 
   - **Blue:** Uses the existing code
   - **Green:** Uses the new code
