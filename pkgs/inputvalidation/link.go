@@ -44,6 +44,7 @@ func ValidateCustomLink(customLink string) error {
 // ValidateByteLink checks if the given byte-link is of proper format.
 func ValidateByteLink(byteLink string) error {
 	// byte-link must not be empty
+	byteLink = strings.TrimSpace(byteLink)
 	if len(byteLink) == 0 {
 		return errors.New("Please enter a byte-link!")
 	}

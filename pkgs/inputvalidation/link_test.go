@@ -92,3 +92,46 @@ func TestValidateCustomLink(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateByteLink(t *testing.T) {
+	cases := []struct {
+		in, errorMessage string
+	}{
+		// blank input
+		{"", "Please enter a byte-link!"},
+		{"   ", "Please enter a byte-link!"},
+
+		// invalid characters
+		{"@", "This byte-link is invalid!"},
+		{"()", "This byte-link is invalid!"},
+		{"*", "This byte-link is invalid!"},
+
+		// lowercase
+		{"a", ""},
+		{"abcdefgh", ""},
+
+		// uppercase
+		{"Z", ""},
+		{"ZYXWVUTS", ""},
+
+		// numbers
+		{"0", ""},
+		{"98765432", ""},
+
+		// mixture
+		{"Ab34Ef78", ""},
+
+		// invalid mixture
+		{"ab2ds$a8", "This byte-link is invalid!"},
+	}
+	for _, c := range cases {
+		got := ValidateByteLink(c.in)
+		if got == nil {
+			if c.errorMessage != "" {
+				t.Errorf("ValidateByteLink(%q) == nil, want Error(%q)", c.in, c.errorMessage)
+			}
+		} else if got.Error() != c.errorMessage {
+			t.Errorf("ValidateByteLink(%q) == %q, want Error(%q)", c.in, got.Error(), c.errorMessage)
+		}
+	}
+}
