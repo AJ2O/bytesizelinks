@@ -12,13 +12,14 @@ phases:
       - echo Downloading go packages...
       - go get -d -v ./...
   
-  # build app, and output to file "app"
+  # build app, and execute unit tests
   build:
     commands:
       - echo Building app...
       - go build -o app
       - echo Starting unit tests...
       - go test ./pkgs/...
+      - echo Completed unit tests!
 
 # build artifacts
 artifacts:
@@ -29,4 +30,4 @@ artifacts:
     - static/**/*
     - Service/**/*
     - Scripts/**/*
-  name: build-$(date +%Y-%m-%d)
+  name: build-$(date +%Y-%m-%d-%H-%M-%S)
