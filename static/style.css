@@ -3,7 +3,7 @@
 }
 
 .error {
-    color: red;
+    color: tomato;
 }
 
 .form {
@@ -18,6 +18,13 @@
     text-align: right;
 }
 
+.link:link, .link:visited {
+    color: aqua;
+}
+.link:hover, .link:active {
+    color: teal;
+}
+
 .title {
     border-bottom-style: solid;
     border-color: rgba(red, green, blue, alpha);
@@ -27,7 +34,7 @@
 }
 
 .webpage {
-    background-color: #0C171F;
+    background-color: #131d2c;
     color: ivory;
     font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }

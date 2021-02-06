@@ -3,6 +3,8 @@ package main
 import (
 	//"bytes"
 	//"encoding/json"
+
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -23,25 +25,40 @@ type HomePage struct {
 const byteSizeLinksURL = "https://bytesize.link"
 const apiURL = "https://api.bytesize.link"
 
-func generateLink(sourceLink string, requestLink string) (string, error) {
+func generateLink(sourceLink string, customLink string) (string, error) {
 	// TODO: validate source link
 	// 1. Empty?
+	if len(sourceLink) == 0 {
+		return "", errors.New("Please enter a link!")
+	}
+
 	// 2. Valid Link?
 
 	// Invoke API
-	response, err := http.Post(apiURL+"/?sourceLink="+sourceLink, "text/plain", nil)
+	response, err := http.Post(
+		apiURL+"/?sourceLink="+sourceLink+"&customByteLink="+customLink,
+		"text/plain",
+		nil)
 	if err != nil {
 		return "", err
 	}
 	data, _ := ioutil.ReadAll(response.Body)
 	stringData := string(data)
-	stringData = stringData[1 : len(stringData)-1]
+
+	// handle potential errors
+	if response.StatusCode != 200 {
+		log.Println(response.StatusCode, stringData)
+		return "", errors.New(stringData)
+	}
 
 	return stringData, nil
 }
 func getLink(byteLink string) (string, error) {
 	// TODO: validate input link
 	// 1. Empty?
+	if len(byteLink) == 0 {
+		return "", errors.New("Please enter a byte-link!")
+	}
 
 	// Invoke API
 	response, err := http.Get(apiURL + "/?byteLink=" + byteLink)
@@ -50,7 +67,12 @@ func getLink(byteLink string) (string, error) {
 	}
 	data, _ := ioutil.ReadAll(response.Body)
 	stringData := string(data)
-	stringData = stringData[1 : len(stringData)-1]
+
+	// handle potential errors
+	if response.StatusCode != 200 {
+		log.Println(response.StatusCode, stringData)
+		return "", errors.New(stringData)
+	}
 
 	return stringData, nil
 }
@@ -78,6 +100,12 @@ func main() {
 			GeneratedMessage: false,
 		}
 
+		errorMessage := r.FormValue("redirectErrorMessage")
+		if len(errorMessage) != 0 {
+			data.Message = errorMessage
+			data.ErrorMessage = true
+		}
+
 		tmpl.Execute(w, data)
 	}).Methods("GET")
 
@@ -96,11 +124,12 @@ func main() {
 			GeneratedMessage: false,
 		}
 		sourceLink := r.FormValue("sourceLink")
-		requestLink := r.FormValue("requestLink")
+		customLink := r.FormValue("customLink")
 
-		link, err := generateLink(sourceLink, requestLink)
+		link, err := generateLink(sourceLink, customLink)
 		if err != nil {
 			data.ErrorMessage = true
+			data.Message = err.Error()
 		} else {
 			data.GeneratedMessage = true
 			data.Message = link
@@ -117,7 +146,9 @@ func main() {
 
 		link, err := getLink(byteLink)
 		if err != nil {
-			//
+			// re-direct home with error
+			r.Form.Set("redirectErrorMessage", err.Error())
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 		} else {
 			// re-route to website
 			log.Println(r.Method, byteLink, link)
