@@ -1,13 +1,11 @@
 package main
 
 import (
-	//"bytes"
-	//"encoding/json"
-
 	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"text/template"
 
 	"github.com/gorilla/mux"
@@ -22,6 +20,11 @@ type HomePage struct {
 	ErrorMessage     bool
 }
 
+// ErrorPage defines values used for display on the error page
+type ErrorPage struct {
+	Message string
+}
+
 const byteSizeLinksURL = "https://bytesize.link"
 const apiURL = "https://api.bytesize.link"
 
@@ -32,7 +35,12 @@ func generateLink(sourceLink string, customLink string) (string, error) {
 		return "", errors.New("Please enter a link!")
 	}
 
-	// 2. Valid Link?
+	// 2. TODO: Valid Link?
+
+	// 3. Custom link must be alphanumeric
+	if !regexp.MustCompile(`^[a-zA-Z0-9]*$`).MatchString(customLink) {
+		return "", errors.New("The custom link may only contain numbers or letters!")
+	}
 
 	// Invoke API
 	response, err := http.Post(
@@ -54,10 +62,14 @@ func generateLink(sourceLink string, customLink string) (string, error) {
 	return stringData, nil
 }
 func getLink(byteLink string) (string, error) {
-	// TODO: validate input link
 	// 1. Empty?
 	if len(byteLink) == 0 {
 		return "", errors.New("Please enter a byte-link!")
+	}
+
+	// 2. Must be alphanumeric
+	if !regexp.MustCompile(`^[a-zA-Z0-9]*$`).MatchString(byteLink) {
+		return "", errors.New("This byte-link is invalid!")
 	}
 
 	// Invoke API
@@ -146,9 +158,18 @@ func main() {
 
 		link, err := getLink(byteLink)
 		if err != nil {
-			// re-direct home with error
-			r.Form.Set("redirectErrorMessage", err.Error())
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			// error page
+			log.Println("ERROR", byteLink, link)
+
+			tmpl, tmplErr := template.ParseFiles("html/error.html")
+			if tmplErr != nil {
+				log.Fatal(tmplErr)
+			}
+			data := ErrorPage{
+				Message: err.Error(),
+			}
+			tmpl.Execute(w, data)
+
 		} else {
 			// re-route to website
 			log.Println(r.Method, byteLink, link)
@@ -156,5 +177,6 @@ func main() {
 		}
 	}).Methods("GET")
 
+	// start web server
 	http.ListenAndServe(":80", r)
 }
