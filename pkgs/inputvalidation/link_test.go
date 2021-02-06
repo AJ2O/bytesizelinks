@@ -8,14 +8,25 @@ func TestValidateSourceLink(t *testing.T) {
 	cases := []struct {
 		in, errorMessage string
 	}{
+		// blank input
 		{"", "Please enter a link!"},
 		{"   ", "Please enter a link!"},
+
+		// relative paths
 		{"/", "Please enter a valid URL!"},
 		{"/foo/bar", "Please enter a valid URL!"},
+
+		// IP addresses (unsupported for now)
+		{"127.0.0.1", "Please enter a valid URL!"},
 		{"127.0.0.1:80", "Please enter a valid URL!"},
+
+		// transport protocol
 		{"http", "Please enter a valid URL!"},
 		{"http://", "Please enter a valid URL!"},
+
+		// domain resolution
 		{"http://www", "Please enter a valid URL!"},
+		{"google.com", "Please enter a valid URL!"},
 		{"http://google.com", ""},
 		{"http://google.com:443", ""},
 	}
