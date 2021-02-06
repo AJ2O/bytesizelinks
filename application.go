@@ -5,7 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/AJ2O/bytesizelinks/pkgs/httphandler"
+	"github.com/AJ2O/bytesizelinks/src/httphandler"
 )
 
 func main() {

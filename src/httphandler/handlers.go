@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/AJ2O/bytesizelinks/pkgs/api"
+	"github.com/AJ2O/bytesizelinks/src/api"
 )
 
 // HomePage defines values used for display on the home page

@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/AJ2O/bytesizelinks/pkgs/inputvalidation"
+	"github.com/AJ2O/bytesizelinks/src/inputvalidation"
 )
 
 const apiURL = "https://api.bytesize.link"
