@@ -14,7 +14,9 @@ Website: https://bytesize.link
 ## Notes
 - The web servers auto-scale to handle fluctuating traffic
 - The servers are behind a load balancer to evenly distribute web traffic, preventing any one from becoming overwhelmed
-- **GenerateURL** uses [TensorFlow's Toxicity Classifier](https://github.com/tensorflow/tfjs-models/tree/master/toxicity) to filter out inappropriate custom links
+- **GenerateURL** uses [TensorFlow's Toxicity Classifier Model](https://medium.com/tensorflow/text-classification-using-tensorflow-js-an-example-of-detecting-offensive-language-in-browser-e2b94e3565ce) to filter out inappropriate custom links
+  - The link to the [source repository is here](https://github.com/tensorflow/tfjs-models/tree/master/toxicity)
+  - This library had to be included as a [Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to work with AWS Lambda
 
 # Code Release Diagram
 <img src="Diagrams/CodeRelease.png" alt="Architecture"/>
