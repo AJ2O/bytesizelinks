@@ -14,6 +14,7 @@ Website: https://bytesize.link
 ## Notes
 - The web servers auto-scale to handle fluctuating traffic
 - The servers are behind a load balancer to evenly distribute web traffic, preventing any one from becoming overwhelmed
+- **GenerateURL** uses [TensorFlow's Toxicity Classifier](https://github.com/tensorflow/tfjs-models/tree/master/toxicity) to filter out inappropriate custom links
 
 # Code Release Diagram
 <img src="Diagrams/CodeRelease.png" alt="Architecture"/>
