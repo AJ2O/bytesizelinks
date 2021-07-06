@@ -1,5 +1,10 @@
-# --- Launch Template
+# --- Data Sources
+# ami id
+data "aws_ssm_parameter" "amzn_linux_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+}
 
+# --- Launch Template
 # permissions
 resource "aws_iam_role" "bsl_webclient_role" {
   name_prefix = "bsl-webclient-role"
@@ -32,12 +37,36 @@ resource "aws_iam_role_policy_attachment" "bsl_webclient_s3_attach" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
 
-# autoscaling 
-/*
+# autoscaling
+resource "aws_iam_instance_profile" "bsl_profile" {
+  name = "bsl-webclient-profile"
+  role = aws_iam_role.bsl_webclient_role.name
+}
 resource "aws_launch_template" "bsl_launch_template" {
   name = "bsl-launch-template"
+
+  iam_instance_profile {
+    arn = aws_iam_instance_profile.bsl_profile.arn
+  }
+
+  image_id = aws_ssm_parameter.amzn_linux_ami.value
 
   instance_type = "t2.micro"
 
   user_data = filebase64("ec2_userdata.sh")
-}*/
+}
+resource "aws_autoscaling_group" "bsl_asg" {
+  name             = "bsl-webclients"
+  max_size         = 5
+  min_size         = 1
+  desired_capacity = 3
+
+  # health checks
+  health_check_type         = "ELB"
+  health_check_grace_period = 60
+
+  launch_template {
+    id      = aws_launch_template.bsl_launch_template.id
+    version = "$Latest"
+  }
+}

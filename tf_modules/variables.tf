@@ -15,3 +15,9 @@ variable "env_type" {
     error_message = "The env_type value must be one of \"dev\", \"test\", or \"prod\"."
   }
 }
+
+variable "domain_name" {
+  description = "The domain name given to the website."
+  type        = string
+  default     = "bytesize.link"
+}
