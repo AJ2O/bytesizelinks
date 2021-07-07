@@ -24,7 +24,7 @@ module "vpc" {
 resource "aws_security_group" "web_sg" {
   name_prefix = "bsl-web-sg"
   description = "Allow access from the public Internet."
-  vpc_id      = module.vpc.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     from_port   = 80
@@ -51,7 +51,7 @@ resource "aws_security_group" "web_sg" {
 # route53
 resource "aws_route53_record" "cert_record" {
   for_each = {
-    for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
+    for dvo in aws_acm_certificate.web_cert.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       record = dvo.resource_record_value
       type   = dvo.resource_record_type
@@ -86,7 +86,7 @@ resource "aws_acm_certificate" "web_cert" {
   }
 }
 resource "aws_acm_certificate_validation" "web_cert_validation" {
-  certificate_arn         = aws_acm_certificate.cert.arn
+  certificate_arn         = aws_acm_certificate.web_cert.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_record : record.fqdn]
 }
 
@@ -104,7 +104,7 @@ resource "aws_lb_target_group" "bsl_alb_tg" {
   target_type = "instance"
   port        = 80
   protocol    = "HTTP"
-  vpc         = module.vpc.id
+  vpc_id      = module.vpc.vpc_id
 
   health_check {
     protocol = "HTTP"
@@ -117,17 +117,29 @@ resource "aws_lb_target_group" "bsl_alb_tg" {
     unhealthy_threshold = 2
   }
 }
-resource "aws_lb_listener" "bsl-web-listener" {
-    load_balancer_arn = aws_lb.bsl_alb.arn
-    ssl_policy ="ELBSecurityPolicy-2016-08"
-    port = "443"
-    protocol = "HTTPS"
-    certificate_arn = aws_acm_certificate.cert.arn
+resource "aws_lb_listener" "bsl_alb_listener" {
+  load_balancer_arn = aws_lb.bsl_alb.arn
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  port              = "443"
+  protocol          = "HTTPS"
+  certificate_arn   = aws_acm_certificate.web_cert.arn
 
-    default_action {
-        type             = "forward"
-        target_group_arn = aws_lb_target_group.bsl_alb_tg.arn
-    }
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.bsl_alb_tg.arn
+  }
 }
-# todo: redirect listener
-# todo: target group attachment
+resource "aws_lb_listener" "bsl_alb_listener_http" {
+  load_balancer_arn = aws_lb.bsl_alb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}

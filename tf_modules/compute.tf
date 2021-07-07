@@ -49,17 +49,21 @@ resource "aws_launch_template" "bsl_launch_template" {
     arn = aws_iam_instance_profile.bsl_profile.arn
   }
 
-  image_id = aws_ssm_parameter.amzn_linux_ami.value
+  image_id = data.aws_ssm_parameter.amzn_linux_ami.value
 
   instance_type = "t2.micro"
 
-  user_data = filebase64("ec2_userdata.sh")
+  user_data = filebase64("./ec2_userdata.sh")
 }
 resource "aws_autoscaling_group" "bsl_asg" {
   name             = "bsl-webclients"
   max_size         = 5
   min_size         = 1
   desired_capacity = 3
+
+  # networking
+  vpc_zone_identifier = module.vpc.public_subnets
+  target_group_arns   = [aws_lb_target_group.bsl_alb_tg.arn]
 
   # health checks
   health_check_type         = "ELB"

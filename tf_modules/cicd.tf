@@ -1,5 +1,4 @@
 # --- CodeBuild ---
-
 # artifact storage
 resource "aws_s3_bucket" "builds_bucket" {
   bucket_prefix = "bsl-builds-bucket"
@@ -108,7 +107,6 @@ resource "aws_codebuild_project" "bsl_build" {
 }
 
 # --- CodeDeploy ---
-
 # permissions
 resource "aws_iam_role" "deploy_role" {
   name_prefix = "bsl-deploy-role"
@@ -150,10 +148,9 @@ resource "aws_iam_role_policy_attachment" "deploy_role_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
 }
 resource "aws_iam_role_policy_attachment" "deploy_launch_template_policy_attach" {
-  role       = aws_iam_role.deploy_role
+  role       = aws_iam_role.deploy_role.name
   policy_arn = aws_iam_policy.deploy_launch_template_policy.arn
 }
-
 # codedeploy (web client)
 resource "aws_codedeploy_app" "bsl_deploy" {
   compute_platform = "Server"
