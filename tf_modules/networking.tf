@@ -99,8 +99,26 @@ resource "aws_lb" "bsl_alb" {
   security_groups    = [aws_security_group.web_sg.id]
   subnets            = module.vpc.public_subnets
 }
-resource "aws_lb_target_group" "bsl_alb_tg" {
-  name        = "bsl-web-alb-tg"
+resource "aws_lb_target_group" "bsl_tg_blue" {
+  name        = "bsl-web-alb-tg-blue"
+  target_type = "instance"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+
+  health_check {
+    protocol = "HTTP"
+    path     = "/"
+    matcher  = "200-299"
+
+    interval            = 10
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+resource "aws_lb_target_group" "bsl_tg_green" {
+  name        = "bsl-web-alb-tg-green"
   target_type = "instance"
   port        = 80
   protocol    = "HTTP"
@@ -126,7 +144,7 @@ resource "aws_lb_listener" "bsl_alb_listener" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.bsl_alb_tg.arn
+    target_group_arn = aws_lb_target_group.bsl_tg_blue.arn
   }
 }
 resource "aws_lb_listener" "bsl_alb_listener_http" {

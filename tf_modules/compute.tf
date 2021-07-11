@@ -1,10 +1,10 @@
-# --- Data Sources
+# --- Data Sources ---
 # ami id
 data "aws_ssm_parameter" "amzn_linux_ami" {
   name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 }
 
-# --- Launch Template
+# --- Launch Template ---
 # permissions
 resource "aws_iam_role" "bsl_webclient_role" {
   name_prefix = "bsl-webclient-role"
@@ -36,14 +36,13 @@ resource "aws_iam_role_policy_attachment" "bsl_webclient_s3_attach" {
   role       = aws_iam_role.bsl_webclient_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
-
-# autoscaling
+# launch template
 resource "aws_iam_instance_profile" "bsl_profile" {
   name = "bsl-webclient-profile"
   role = aws_iam_role.bsl_webclient_role.name
 }
 resource "aws_launch_template" "bsl_launch_template" {
-  name = "bsl-launch-template"
+  name_prefix = "bsl-launch-template"
 
   iam_instance_profile {
     arn = aws_iam_instance_profile.bsl_profile.arn
@@ -53,17 +52,49 @@ resource "aws_launch_template" "bsl_launch_template" {
 
   instance_type = "t2.micro"
 
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name = "BSL Web Client"
+    }
+  }
+
   user_data = filebase64("./ec2_userdata.sh")
 }
-resource "aws_autoscaling_group" "bsl_asg" {
-  name             = "bsl-webclients"
-  max_size         = 5
+
+# --- Auto Scaling ---
+# blue/green groups
+resource "aws_autoscaling_group" "bsl_asg_blue" {
+  name             = "bsl-webclients-blue"
+  max_size         = 3
   min_size         = 1
-  desired_capacity = 3
+  desired_capacity = 1
 
   # networking
   vpc_zone_identifier = module.vpc.public_subnets
-  target_group_arns   = [aws_lb_target_group.bsl_alb_tg.arn]
+  target_group_arns   = [aws_lb_target_group.bsl_tg_blue.arn]
+
+  # health checks
+  health_check_type         = "ELB"
+  health_check_grace_period = 60
+
+  launch_template {
+    id      = aws_launch_template.bsl_launch_template.id
+    version = "$Latest"
+  }
+}
+resource "aws_autoscaling_group" "bsl_asg_green" {
+  name             = "bsl-webclients-green"
+  max_size         = 3
+  min_size         = 1
+  desired_capacity = 1
+
+  # networking
+  vpc_zone_identifier = module.vpc.public_subnets
+  target_group_arns   = [aws_lb_target_group.bsl_tg_green.arn]
 
   # health checks
   health_check_type         = "ELB"

@@ -40,6 +40,7 @@ resource "aws_iam_policy" "build_policy" {
         ],
         Resource : "arn:aws:codebuild:${var.region}:${data.aws_caller_identity.current.account_id}:report-group/*"
       },
+
       # CloudWatch
       {
         Effect = "Allow"
@@ -50,17 +51,22 @@ resource "aws_iam_policy" "build_policy" {
         ]
         Resource = "*"
       },
+
       # S3
       {
         Effect = "Allow"
         Action = [
-          "s3:PutObject",
           "s3:GetBucketAcl",
-          "s3:GetBucketLocation"
+          "s3:GetBucketLocation",
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject"
         ]
         Resource = [
           aws_s3_bucket.builds_bucket.arn,
-          "${aws_s3_bucket.builds_bucket.arn}/*"
+          "${aws_s3_bucket.builds_bucket.arn}/*",
+          aws_s3_bucket.pipeline_bucket.arn,
+          "${aws_s3_bucket.pipeline_bucket.arn}/*"
         ]
       },
     ]
@@ -156,20 +162,202 @@ resource "aws_codedeploy_app" "bsl_deploy" {
   compute_platform = "Server"
   name             = "bsl-webclient"
 }
-/*
 resource "aws_codedeploy_deployment_group" "bsl_dg" {
-  app_name = aws_codedeploy_app.bsl_deploy.name
-  deployment_group_name = "bsl-deployment-group"
-  service_role_arn = aws_iam_role.deploy_role.arn
+  app_name               = aws_codedeploy_app.bsl_deploy.name
+  deployment_group_name  = "bsl-deployment-group"
+  deployment_config_name = "CodeDeployDefault.AllAtOnce"
+  service_role_arn       = aws_iam_role.deploy_role.arn
+
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+
+  blue_green_deployment_config {
+    deployment_ready_option {
+      action_on_timeout = "CONTINUE_DEPLOYMENT"
+    }
+
+    green_fleet_provisioning_option {
+      action = "DISCOVER_EXISTING"
+    }
+
+    terminate_blue_instances_on_deployment_success {
+      action                           = "TERMINATE"
+      termination_wait_time_in_minutes = 15
+    }
+  }
 
   deployment_style {
-    deployment_type = "BLUE_GREEN"
-
+    deployment_type   = "BLUE_GREEN"
+    deployment_option = "WITH_TRAFFIC_CONTROL"
   }
 
   load_balancer_info {
-    target_group_info = 
+    target_group_info {
+      name = aws_lb_target_group.bsl_tg_blue.name
+    }
   }
-}*/
+}
 
 # --- CodePipeline ---
+# artifact storage
+resource "aws_s3_bucket" "pipeline_bucket" {
+  bucket_prefix = "bsl-pipeline-bucket"
+  acl           = "private"
+}
+# codestar connection to GitHub -> must be confirmed in console
+resource "aws_codestarconnections_connection" "github" {
+  name          = "github-connection"
+  provider_type = "GitHub"
+}
+
+# permissions
+resource "aws_iam_role" "pipeline_role" {
+  name_prefix = "bsl-pipeline-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "codepipeline.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+resource "aws_iam_policy" "pipeline_policy" {
+  name_prefix = "bsl-pipeline-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      # CodeBuild
+      {
+        Effect = "Allow"
+        Action = [
+          "codebuild:BatchGetBuilds",
+          "codebuild:StartBuild"
+        ]
+        Resource = "*"
+      },
+
+      # CodeDeploy
+      {
+        Effect = "Allow"
+        Action = [
+          "codedeploy:CreateDeployment",
+          "codedeploy:GetApplication",
+          "codedeploy:GetApplicationRevision",
+          "codedeploy:GetDeployment",
+          "codedeploy:GetDeploymentConfig",
+          "codedeploy:RegisterApplicationRevision"
+        ]
+        Resource = "*"
+      },
+
+      # CodeStar
+      {
+        Effect = "Allow"
+        Action = [
+          "codestar-connections:UseConnection"
+        ]
+        Resource = aws_codestarconnections_connection.github.arn
+      },
+
+      # S3
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:GetBucketVersioning",
+          "s3:PutObjectAcl",
+          "s3:PutObject"
+        ]
+        Resource = [
+          aws_s3_bucket.pipeline_bucket.arn,
+          "${aws_s3_bucket.pipeline_bucket.arn}/*"
+        ]
+      },
+    ]
+  })
+}
+resource "aws_iam_role_policy_attachment" "pipeline_policy_attach" {
+  role       = aws_iam_role.pipeline_role.name
+  policy_arn = aws_iam_policy.pipeline_policy.arn
+}
+
+# main pipeline
+resource "aws_codepipeline" "web_client" {
+  name     = "bsl-webclient-pipeline"
+  role_arn = aws_iam_role.pipeline_role.arn
+
+  artifact_store {
+    location = aws_s3_bucket.pipeline_bucket.id
+    type     = "S3"
+  }
+
+  # scm - https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-CodestarConnectionSource.html
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
+      version          = "1"
+      output_artifacts = ["SourceArtifact"]
+
+      configuration = {
+        ConnectionArn        = aws_codestarconnections_connection.github.arn
+        FullRepositoryId     = "AJ2O/bytesizelinks"
+        BranchName           = "main"
+        DetectChanges        = true
+        OutputArtifactFormat = "CODE_ZIP"
+      }
+    }
+  }
+
+  # build - https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-CodeBuild.html
+  stage {
+    name = "Build"
+
+    action {
+      name             = "Build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      version          = "1"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildArtifact"]
+
+      configuration = {
+        ProjectName = aws_codebuild_project.bsl_build.name
+      }
+    }
+  }
+
+  # deploy - https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-CodeDeploy.html
+  stage {
+    name = "Deploy"
+
+    action {
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "CodeDeploy"
+      version         = "1"
+      input_artifacts = ["BuildArtifact"]
+
+      configuration = {
+        ApplicationName     = aws_codedeploy_app.bsl_deploy.name
+        DeploymentGroupName = aws_codedeploy_deployment_group.bsl_dg.id
+      }
+    }
+  }
+}
