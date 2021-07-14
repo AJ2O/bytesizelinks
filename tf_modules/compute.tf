@@ -67,7 +67,7 @@ resource "aws_launch_template" "bsl_launch_template" {
 
 # --- Auto Scaling ---
 # blue/green groups
-resource "aws_autoscaling_group" "bsl_asg_blue" {
+resource "aws_autoscaling_group" "bsl_asg" {
   name             = "bsl-webclients-blue"
   max_size         = 3
   min_size         = 1
@@ -75,30 +75,11 @@ resource "aws_autoscaling_group" "bsl_asg_blue" {
 
   # networking
   vpc_zone_identifier = module.vpc.public_subnets
-  target_group_arns   = [aws_lb_target_group.bsl_tg_blue.arn]
+  target_group_arns   = [aws_lb_target_group.bsl_tg.arn]
 
   # health checks
   health_check_type         = "ELB"
-  health_check_grace_period = 60
-
-  launch_template {
-    id      = aws_launch_template.bsl_launch_template.id
-    version = "$Latest"
-  }
-}
-resource "aws_autoscaling_group" "bsl_asg_green" {
-  name             = "bsl-webclients-green"
-  max_size         = 3
-  min_size         = 1
-  desired_capacity = 1
-
-  # networking
-  vpc_zone_identifier = module.vpc.public_subnets
-  target_group_arns   = [aws_lb_target_group.bsl_tg_green.arn]
-
-  # health checks
-  health_check_type         = "ELB"
-  health_check_grace_period = 60
+  health_check_grace_period = 300
 
   launch_template {
     id      = aws_launch_template.bsl_launch_template.id

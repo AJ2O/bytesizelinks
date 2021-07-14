@@ -21,3 +21,9 @@ variable "domain_name" {
   type        = string
   default     = "bytesize.link"
 }
+
+variable "github_repo" {
+  description = "The GitHub repo from which to clone the application code."
+  type        = string
+  default     = "AJ2O/bytesizelinks"
+}

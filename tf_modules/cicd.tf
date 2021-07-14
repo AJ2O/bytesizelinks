@@ -3,6 +3,7 @@
 resource "aws_s3_bucket" "builds_bucket" {
   bucket_prefix = "bsl-builds-bucket"
   acl           = "private"
+  force_destroy = true
 }
 
 # permissions
@@ -107,7 +108,7 @@ resource "aws_codebuild_project" "bsl_build" {
 
   source {
     type            = "GITHUB"
-    location        = "https://github.com/AJ2O/bytesizelinks.git"
+    location        = format("https://github.com/%s.git", var.github_repo)
     git_clone_depth = 1
   }
 }
@@ -173,18 +174,20 @@ resource "aws_codedeploy_deployment_group" "bsl_dg" {
     events  = ["DEPLOYMENT_FAILURE"]
   }
 
+  autoscaling_groups = [aws_autoscaling_group.bsl_asg.name]
+
   blue_green_deployment_config {
     deployment_ready_option {
       action_on_timeout = "CONTINUE_DEPLOYMENT"
     }
 
     green_fleet_provisioning_option {
-      action = "DISCOVER_EXISTING"
+      action = "COPY_AUTO_SCALING_GROUP"
     }
 
     terminate_blue_instances_on_deployment_success {
       action                           = "TERMINATE"
-      termination_wait_time_in_minutes = 15
+      termination_wait_time_in_minutes = 60
     }
   }
 
@@ -195,8 +198,12 @@ resource "aws_codedeploy_deployment_group" "bsl_dg" {
 
   load_balancer_info {
     target_group_info {
-      name = aws_lb_target_group.bsl_tg_blue.name
+      name = aws_lb_target_group.bsl_tg.name
     }
+  }
+
+  lifecycle {
+    ignore_changes = [autoscaling_groups]
   }
 }
 
@@ -205,6 +212,7 @@ resource "aws_codedeploy_deployment_group" "bsl_dg" {
 resource "aws_s3_bucket" "pipeline_bucket" {
   bucket_prefix = "bsl-pipeline-bucket"
   acl           = "private"
+  force_destroy = true
 }
 # codestar connection to GitHub -> must be confirmed in console
 resource "aws_codestarconnections_connection" "github" {
@@ -315,7 +323,7 @@ resource "aws_codepipeline" "web_client" {
 
       configuration = {
         ConnectionArn        = aws_codestarconnections_connection.github.arn
-        FullRepositoryId     = "AJ2O/bytesizelinks"
+        FullRepositoryId     = var.github_repo
         BranchName           = "main"
         DetectChanges        = true
         OutputArtifactFormat = "CODE_ZIP"
@@ -356,7 +364,7 @@ resource "aws_codepipeline" "web_client" {
 
       configuration = {
         ApplicationName     = aws_codedeploy_app.bsl_deploy.name
-        DeploymentGroupName = aws_codedeploy_deployment_group.bsl_dg.id
+        DeploymentGroupName = aws_codedeploy_deployment_group.bsl_dg.deployment_group_name
       }
     }
   }
